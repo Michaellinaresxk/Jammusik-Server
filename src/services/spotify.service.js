@@ -54,21 +54,40 @@ class SpotifyService {
 
   async getTrackDetails(trackId) {
     try {
+      console.log('Getting track details for ID:', trackId);
       const track = await spotifyApi.getTrack(trackId);
-      return {
+
+      if (!track || !track.body) {
+        console.error('Invalid track response:', track);
+        throw new Error('Invalid track response from Spotify API');
+      }
+
+      console.log('Raw track response:', track.body);
+
+      const trackDetails = {
         id: track.body.id,
         name: track.body.name,
-        artist: track.body.artists[0].name,
-        album: track.body.album.name,
-        image: track.body.album.images[0]?.url,
+        artist: track.body.artists[0]?.name || 'Unknown Artist',
+        album: track.body.album?.name || 'Unknown Album',
+        image: track.body.album?.images[0]?.url,
         preview_url: track.body.preview_url,
         duration_ms: track.body.duration_ms,
         popularity: track.body.popularity,
-        external_url: track.body.external_urls.spotify
+        external_url: track.body.external_urls?.spotify
       };
+
+      console.log('Processed track details:', trackDetails);
+      return trackDetails;
+
     } catch (error) {
-      console.error('Error getting track details:', error);
-      throw new Error('Failed to fetch track details');
+      console.error('Detailed error in getTrackDetails:', {
+        trackId,
+        errorMessage: error.message,
+        errorStack: error.stack,
+        spotifyError: error.body // Si es un error de la API de Spotify
+      });
+
+      throw new Error(`Failed to fetch track details: ${error.message}`);
     }
   }
 

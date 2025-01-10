@@ -31,8 +31,23 @@ initializeSpotifyToken();
 
 // Middleware to ensure that we have a valid token
 spotifyApi.ensureToken = async () => {
-  if (!spotifyApi.getAccessToken()) {
-    await initializeSpotifyToken();
+  try {
+    if (!spotifyApi.getAccessToken()) {
+      console.log('No access token found, initializing...');
+      await initializeSpotifyToken();
+    }
+
+    // Verificar si el token actual es válido
+    try {
+      await spotifyApi.getMe();
+    } catch (error) {
+      console.log('Token validation failed, refreshing...');
+      await initializeSpotifyToken();
+    }
+
+  } catch (error) {
+    console.error('Error in ensureToken:', error);
+    throw error;
   }
 };
 

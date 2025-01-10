@@ -28,11 +28,43 @@ router.get('/tracks/top', async (req, res) => {
 });
 
 router.get('/tracks/:id', async (req, res) => {
+  const trackId = req.params.id;
+
+  if (!trackId) {
+    return res.status(400).json({ error: 'Track ID is required' });
+  }
+
   try {
-    const track = await SpotifyService.getTrackDetails(req.params.id);
+    console.log('Attempting to fetch track details for ID:', trackId);
+    const track = await SpotifyService.getTrackDetails(trackId);
+
+    if (!track) {
+      console.log('No track found for ID:', trackId);
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    console.log('Successfully retrieved track details:', track);
     res.json(track);
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in track details route:', {
+      trackId,
+      error: error.message,
+      stack: error.stack
+    });
+
+    // Si es un error específico de la API de Spotify
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        error: error.message,
+        spotifyError: true
+      });
+    }
+
+    res.status(500).json({
+      error: 'Failed to fetch track details',
+      message: error.message
+    });
   }
 });
 

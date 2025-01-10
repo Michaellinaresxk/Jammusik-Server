@@ -2,11 +2,17 @@
 const express = require('express');
 const cors = require('cors');
 const tracksRoutes = require('./routes/tracks.routes');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: '*',  // In production, specify actual origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 // Ruta de prueba
