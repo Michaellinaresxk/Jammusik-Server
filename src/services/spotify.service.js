@@ -91,6 +91,37 @@ class SpotifyService {
     }
   }
 
+  async getTrackAnalysis(title, artist) {
+    try {
+      console.log('Searching for:', title, artist);
+
+      // 1. Buscar la canción
+      const searchResults = await spotifyApi.searchTracks(`track:${title} artist:${artist}`);
+      console.log('Search results:', searchResults.body.tracks.items.length);
+
+      if (!searchResults.body.tracks.items.length) {
+        return null;
+      }
+
+      const track = searchResults.body.tracks.items[0];
+      console.log('Found track ID:', track.id);
+
+      // 2. Obtener análisis
+      const analysis = await spotifyApi.getAudioFeatures(track.id);
+      console.log('Analysis received:', analysis.body);
+
+      return {
+        id: track.id,
+        name: track.name,
+        analysis: analysis.body
+      };
+
+    } catch (error) {
+      console.error('Spotify Analysis Error:', error);
+      throw error;
+    }
+  }
+
   async searchTracks(query) {
     try {
       const data = await spotifyApi.searchTracks(query, { limit: 10 });

@@ -9,12 +9,12 @@ exports.getTopTracks = async (req, res) => {
   }
 };
 
-exports.getTrackDetails = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const track = await SpotifyService.getTrackDetails(id);
-    res.json(track);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+// exports.getTrackDetails = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const track = await SpotifyService.getTrackDetails(id);
+//     res.json(track);
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };

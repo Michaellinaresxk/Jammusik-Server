@@ -15,6 +15,31 @@ const ensureToken = async (req, res, next) => {
 // Apply middleware to all routes
 router.use(ensureToken);
 
+
+router.get('/tracks/analyze', async (req, res) => {
+  try {
+    const { title, artist } = req.query;
+
+    if (!title || !artist) {
+      return res.status(400).json({ error: 'Title and artist are required' });
+    }
+
+    const analysis = await SpotifyService.getTrackAnalysis(title, artist);
+
+    if (!analysis) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    res.json(analysis);
+  } catch (error) {
+    console.error('Route Error:', error);
+    res.status(500).json({
+      error: 'Failed to analyze track',
+      details: error.message
+    });
+  }
+});
+
 router.get('/tracks/top', async (req, res) => {
   try {
     console.log('Getting top tracks...');
@@ -67,6 +92,8 @@ router.get('/tracks/:id', async (req, res) => {
     });
   }
 });
+
+
 
 router.get('/search', async (req, res) => {
   try {
