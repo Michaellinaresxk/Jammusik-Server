@@ -68,6 +68,18 @@ router.get('/tracks/:id', async (req, res) => {
   }
 });
 
+router.get('/browse/new-releases', async (req, res) => {
+  try {
+    console.log('Getting new releases...');
+    const releases = await SpotifyService.getNewReleases();
+    console.log(`Found ${releases.length} new releases`);
+    res.json(releases);
+  } catch (error) {
+    console.error('New releases route error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/search', async (req, res) => {
   try {
     const { q } = req.query;
