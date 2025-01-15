@@ -17,8 +17,7 @@ const initializeSpotifyToken = async () => {
   } catch (error) {
     console.error('❌ Error obtaining Spotify token:', error.message);
     throw error;
-  }
-};
+  } };
 
 // Modifica el middleware para ambiente serverless
 spotifyApi.ensureToken = async () => {

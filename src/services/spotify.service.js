@@ -43,7 +43,8 @@ class SpotifyService {
           artist: item.artists[0].name,
           image: item.images[0]?.url,
           album: item.name,
-          release_date: item.release_date
+          release_date: item.release_date,
+          preview_url: item.preview_url
         }));
       } catch (fallbackError) {
         console.error('Fallback error:', fallbackError);
@@ -105,6 +106,43 @@ class SpotifyService {
     } catch (error) {
       console.error('Error searching tracks:', error);
       throw new Error('Failed to search tracks');
+    }
+  }
+
+  async getNewReleases() {
+    try {
+      console.log('Fetching new releases from Spotify...');
+      const response = await spotifyApi.getNewReleases({
+        limit: 10,
+        country: 'US'
+      });
+
+      console.log('Raw new releases response:', response.body);
+
+      if (!response.body || !response.body.albums || !response.body.albums.items) {
+        throw new Error('Invalid response format from Spotify API');
+      }
+
+      const releases = response.body.albums.items.map(album => ({
+        id: album.id,
+        name: album.name,
+        artist: album.artists[0].name,
+        album: album.name,
+        image: album.images[0]?.url,
+        release_date: album.release_date,
+        external_url: album.external_urls?.spotify
+      }));
+
+      console.log('Processed releases:', releases);
+      return releases;
+
+    } catch (error) {
+      console.error('Error fetching new releases:', {
+        message: error.message,
+        stack: error.stack,
+        spotifyError: error.body
+      });
+      throw error;
     }
   }
 }

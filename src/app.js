@@ -32,6 +32,7 @@ if (process.env.NODE_ENV !== 'production') {
       🚀 Server is running!
       🎵 Test the server: http://localhost:${PORT}/test
       🎧 Get top tracks: http://localhost:${PORT}/api/tracks/top
+     🎸 Get new releases: http://localhost:${PORT}/api/browse/new-releases
     `);
   });
 }
