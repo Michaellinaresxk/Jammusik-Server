@@ -14,6 +14,8 @@ app.use(cors({
 
 app.use(express.json());
 
+
+
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is running!' });
 });
@@ -31,12 +33,19 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`
       🚀 Server is running!
       🎵 Test the server: http://localhost:${PORT}/test
-      🎧 Get top tracks: http://localhost:${PORT}/api/tracks/top
+      🎧 Get top tracks: 
      🎸 Get new releases: http://localhost:${PORT}/api/browse/new-releases
-     http://localhost:${PORT}/api/browse/categories
     `);
   });
 }
 
-// Exporta la app para Vercel
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 module.exports = app;
