@@ -2,31 +2,6 @@
 const spotifyApi = require('../config/spotify.config');
 
 class SpotifyService {
-  async getCategories() {
-    try {
-      console.log('Fetching Spotify categories...');
-      const response = await spotifyApi.getCategories({
-        limit: 10,
-        country: 'US',
-        locale: 'es_ES'
-      });
-
-      if (!response?.body?.categories?.items?.length) {
-        throw new Error('No categories found');
-      }
-
-      return response.body.categories.items.map(category => ({
-        id: category.id,
-        name: category.name,
-        image: category.icons[0]?.url
-      }));
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      throw new Error('Failed to fetch categories');
-    }
-  }
-
-
   async getNewReleases() {
     try {
       console.log('Fetching new releases from Spotify...');
