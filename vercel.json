@@ -17,7 +17,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/src/app.js"
+      "dest": "/app.js"
     }
   ]
 }
