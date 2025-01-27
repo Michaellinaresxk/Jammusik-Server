@@ -25,18 +25,17 @@ app.get('/api', (req, res) => {
 
 app.use('/api', tracksRoutes);
 
-// Solo inicia el servidor si no está en Vercel
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`
+// if (process.env.NODE_ENV !== 'production') {
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`
       🚀 Server is running!
       🎵 Test the server: http://localhost:${PORT}/test
-      🎧 Get top tracks: 
+      🎧 Get top tracks:
      🎸 Get new releases: http://localhost:${PORT}/api/browse/new-releases
     `);
-  });
-}
+});
+// }
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
