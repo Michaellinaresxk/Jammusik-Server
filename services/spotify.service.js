@@ -66,6 +66,41 @@ class SpotifyService {
       throw new Error('Failed to fetch new releases');
     }
   }
+
+  async getDetailedTrackInfo(title, artist) {
+    try {
+      // Solo hacemos la búsqueda básica primero
+      const searchQuery = `track:${title} artist:${artist}`;
+      const searchResponse = await spotifyApi.search(searchQuery, ['track'], {
+        limit: 1,
+        market: 'US'
+      });
+
+      if (!searchResponse.body.tracks.items.length) {
+        throw new Error('Track not found');
+      }
+
+      const track = searchResponse.body.tracks.items[0];
+
+      // Retornamos solo la información básica
+      return {
+        track_info: {
+          name: track.name,
+          artist: track.artists[0].name,
+          album: {
+            name: track.album.name,
+            release_date: track.album.release_date,
+            image: track.album.images[0]?.url
+          },
+          preview_url: track.preview_url,
+          external_url: track.external_urls.spotify
+        }
+      };
+    } catch (error) {
+      console.error('Error getting track info:', error);
+      throw new Error(`Failed to get track info: ${error.message}`);
+    }
+  }
 }
 
 module.exports = new SpotifyService();

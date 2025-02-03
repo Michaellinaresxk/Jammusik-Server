@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const app = express();
 
+// Middleware
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -13,8 +14,7 @@ app.use(cors({
 
 app.use(express.json());
 
-
-
+// Basic routes
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is running!' });
 });
@@ -23,27 +23,32 @@ app.get('/api', (req, res) => {
   res.json({ message: 'We are ready!' });
 });
 
+// API routes
 app.use('/api', tracksRoutes);
 
-// if (process.env.NODE_ENV !== 'production') {
+// Error handling middleware - debe ir DESPUÉS de las rutas
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+// 404 handler - debe ir DESPUÉS de todas las rutas
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`
-      🚀 Server is running!
-      🎵 Test the server: http://localhost:${PORT}/test
-      🎧 Get top tracks:
-     🎸 Get new releases: http://localhost:${PORT}/api/browse/new-releases
-    `);
-});
-// }
-
-// app.use((req, res) => {
-//   res.status(404).json({ error: 'Route not found' });
-// });
-
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ error: 'Internal server error' });
+    🚀 Server is running!
+    🎵 Test the server: http://localhost:${PORT}/test
+    🔍 Test Spotify endpoints: http://localhost:${PORT}/api/test-endpoints
+    🎸 Get new releases: http://localhost:${PORT}/api/browse/new-releases
+    🎼 Get track info: http://localhost:${PORT}/api/browse/track-info/:title/:artist
+  `);
 });
 
 module.exports = app;
