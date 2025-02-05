@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const LastFMService = require('../services/lastfm.service');
 const SpotifyService = require('../services/spotify.service');
 const spotifyApi = require('../config/spotify.config');
 const SpotifyEndpointsTester = require('../services/SpotifyEndpointsTester');
@@ -46,6 +47,32 @@ router.get('/browse/track-info', async (req, res) => {
     }
 
     const trackInfo = await SpotifyService.getDetailedTrackInfo(title, artist);
+    res.json(trackInfo);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/top-tracks', async (req, res) => {
+  try {
+    const tracks = await LastFMService.getTopTracks();
+    res.json(tracks);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/track-info', async (req, res) => {
+  try {
+    const { title, artist } = req.query;
+
+    if (!title || !artist) {
+      return res.status(400).json({
+        error: 'Both title and artist are required'
+      });
+    }
+
+    const trackInfo = await lastFMService.getTrackInfo(title, artist);
     res.json(trackInfo);
   } catch (error) {
     res.status(500).json({ error: error.message });
