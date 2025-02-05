@@ -47,7 +47,7 @@ app.listen(PORT, () => {
     🎵 Test the server: http://localhost:${PORT}/test
     🔍 Test Spotify endpoints: http://localhost:${PORT}/api/test-endpoints
     🎸 Get new releases: http://localhost:${PORT}/api/browse/new-releases
-    🎼 Get track info: http://localhost:${PORT}/api/browse/track-info/:title/:artist
+     🎧 Get top tracks: http://localhost:${PORT}/api/top-tracks
   `);
 });
 
