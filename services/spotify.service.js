@@ -101,6 +101,8 @@ class SpotifyService {
       throw new Error(`Failed to get track info: ${error.message}`);
     }
   }
+
+
 }
 
 module.exports = new SpotifyService();

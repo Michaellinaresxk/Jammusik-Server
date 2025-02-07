@@ -83,6 +83,49 @@ class LastFMService {
       throw new Error('Failed to fetch track info');
     }
   }
+
+  async getTrackDetails(artist, trackName) {
+    try {
+      console.log('Fetching details for:', trackName, 'by', artist);
+      const response = await axios.get(this.baseURL, {
+        params: {
+          method: 'track.getInfo',
+          api_key: this.apiKey,
+          artist: artist,
+          track: trackName,
+          format: 'json',
+          autocorrect: 1
+        }
+      });
+
+      const trackData = response.data.track;
+
+      // Transformamos los datos para tener información más rica
+      return {
+        id: trackData.mbid || `${trackName}-${artist}`,
+        name: trackData.name,
+        artist: trackData.artist.name,
+        album: trackData.album?.title,
+        image: trackData.album?.image?.[3]['#text'],
+        duration: trackData.duration ? this.formatDuration(trackData.duration) : undefined,
+        tags: trackData.toptags?.tag?.map(tag => tag.name) || [],
+        wiki: trackData.wiki?.content,
+        summary: trackData.wiki?.summary,
+        playcount: trackData.playcount,
+        listeners: trackData.listeners,
+        url: trackData.url
+      };
+    } catch (error) {
+      console.error('Error fetching track details:', error);
+      throw new Error('Failed to fetch track details');
+    }
+  }
+
+  formatDuration(ms) {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
 }
 
 module.exports = new LastFMService();
