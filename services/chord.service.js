@@ -10,7 +10,7 @@ class ChordService {
         max_tokens: 1024,
         messages: [{
           role: "user",
-          content: `As a musical expert, analyze the song "${title}" by ${artist}". 
+          content: `As a musical expert, analyze the song "${title}" by ${artist}".
           Please provide a detailed chord analysis including:
           1. Song key
           2. Verse chord progression
@@ -76,7 +76,7 @@ class ChordService {
       };
     } catch (error) {
       console.error('Error enriching chord data:', error);
-      return chordData; // Retornamos datos básicos si falla el enriquecimiento
+      return chordData; // Return basic data if enrichment fails
     }
   }
   _calculateComplexity(chords) {
