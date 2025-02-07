@@ -2,6 +2,8 @@ const { anthropicApi } = require('../config/anthropic.config');
 class ChordService {
   async generateChordProgression(title, artist) {
     try {
+      console.log('Starting chord generation...');
+      console.log('API Key present:', !!process.env.ANTHROPIC_API_KEY);
       console.log('Generating chord progression for:', { title, artist });
       const response = await anthropicApi.messages.create({
         model: "claude-3-opus-20240229",
@@ -14,7 +16,6 @@ class ChordService {
           2. Verse chord progression
           3. Chorus chord progression
           4. Common chord substitutions
-          
           Return ONLY a JSON object with this structure:
           {
             "key": "string",
@@ -26,6 +27,7 @@ class ChordService {
           }`
         }]
       });
+      console.log('Anthropic Response:', response);
       if (!response?.content?.length) {
         throw new Error('No chord progression generated');
       }
@@ -41,7 +43,13 @@ class ChordService {
   }
   _processChordResponse(content) {
     try {
-      const chordAnalysis = JSON.parse(content.text);
+      // Extract JSON from text response
+      const jsonStart = content.text.indexOf('{');
+      const jsonEnd = content.text.lastIndexOf('}') + 1;
+      const jsonString = content.text.slice(jsonStart, jsonEnd);
+
+      const chordAnalysis = JSON.parse(jsonString);
+
       return {
         key: chordAnalysis.key,
         progressions: {
@@ -52,8 +60,8 @@ class ChordService {
         complexity: this._calculateComplexity(chordAnalysis.chords)
       };
     } catch (error) {
-      console.error('Error processing chord response:', error);
-      throw new Error('Failed to process chord data');
+      console.error('Parse error:', error);
+      throw error;
     }
   }
   async _enrichChordData(chordData) {
