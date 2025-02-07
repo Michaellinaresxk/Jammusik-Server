@@ -14,23 +14,25 @@ const ensureToken = async (req, res, next) => {
   }
 };
 
-// Apply middleware to all routes
-router.use(ensureToken);
-
-router.get('/browse/new-releases', async (req, res) => {
-  try {
-    const releases = await SpotifyService.getNewReleases();
-    res.json(releases);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Apply middleware ONLY to Spotify routes
+router.use('/browse', ensureToken); // Spotify routes
+router.use('/test-endpoints', ensureToken); // Spotify testing
 
 router.get('/test-endpoints', async (req, res) => {
   try {
     const tester = new SpotifyEndpointsTester(spotifyApi);
     const results = await tester.testAllEndpoints();
     res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Spotify Routes
+router.get('/browse/new-releases', async (req, res) => {
+  try {
+    const releases = await SpotifyService.getNewReleases();
+    res.json(releases);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -53,6 +55,7 @@ router.get('/browse/track-info', async (req, res) => {
   }
 });
 
+// LastFM Routes (sin middleware de Spotify)
 router.get('/top-tracks', async (req, res) => {
   try {
     const tracks = await LastFMService.getTopTracks();
@@ -64,18 +67,25 @@ router.get('/top-tracks', async (req, res) => {
 
 router.get('/track-info', async (req, res) => {
   try {
-    const { title, artist } = req.query;
+    const { artist, track } = req.query;
+    console.log('Received request for track:', { artist, track });
 
-    if (!title || !artist) {
+    if (!artist || !track) {
       return res.status(400).json({
-        error: 'Both title and artist are required'
+        error: 'Both artist and track name are required'
       });
     }
 
-    const trackInfo = await lastFMService.getTrackInfo(title, artist);
+    const lastFMService = new LastFMService();
+    const trackInfo = await lastFMService.getTrackDetails(artist, track);
+    console.log('Track info retrieved:', trackInfo);
     res.json(trackInfo);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in track-info route:', error);
+    res.status(500).json({
+      error: error.message,
+      details: error.response?.data || 'No additional details available'
+    });
   }
 });
 
