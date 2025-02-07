@@ -1,4 +1,3 @@
-// src/services/spotify.service.js
 const spotifyApi = require('../config/spotify.config');
 
 class SpotifyService {
