@@ -15,42 +15,89 @@ app.use(cors({
 
 app.use(express.json());
 
-// Basic routes
-app.get('/test', (req, res) => {
-  res.json({ message: 'Server is running!' });
-});
-
-app.get('/api', (req, res) => {
-  res.json({ message: 'We are ready!' });
-});
-
-// API routes
-app.use('/api', tracksRoutes);
-// API chords
-app.use('/api/chords', chordRoutes);
-
-// Error handling middleware - debe ir DESPUÉS de las rutas
-app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
   });
 });
 
-// 404 handler - debe ir DESPUÉS de todas las rutas
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// Basic routes
+app.get('/api', (req, res) => {
+  res.json({ message: 'API is running' });
 });
+
+// API routes con manejo de errores
+app.use('/api', async (req, res, next) => {
+  try {
+    await tracksRoutes(req, res, next);
+  } catch (error) {
+    console.error('Routes error:', error);
+    next(error);
+  }
+});
+
+app.use('/api/chords', async (req, res, next) => {
+  try {
+    await chordRoutes(req, res, next);
+  } catch (error) {
+    console.error('Chords routes error:', error);
+    next(error);
+  }
+});
+
+// Error handling middleware mejorado
+app.use((err, req, res, next) => {
+  console.error('Error caught in middleware:', {
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    path: req.path,
+    method: req.method
+  });
+
+  // Errores específicos de Spotify
+  if (err.name === 'SpotifyWebApiError') {
+    return res.status(400).json({
+      error: 'Spotify API error',
+      message: err.message
+    });
+  }
+
+  // Error general
+  res.status(err.status || 500).json({
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+    status: err.status || 500,
+    path: req.path
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Route not found',
+    path: req.path,
+    method: req.method
+  });
+});
+
+// Solo iniciar el servidor si no estamos en Vercel
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`
     🚀 Server is running!
-    🎵 Test the server: http://localhost:${PORT}/test
-    🔍 Test Spotify endpoints: http://localhost:${PORT}/api/test-endpoints
-    🎸 Get new releases: http://localhost:${PORT}/api/browse/new-releases
-      🎧 Get chords : http://localhost:${PORT}/api/chords/test
+    🎵 Test the server: http://192.168.1.10:${PORT}/api/test
+    🔍 Test Spotify endpoints: http://192.168.1.10:${PORT}/api/test-endpoints
+    🎸 Get new releases: http://192.168.1.10:${PORT}/api/browse/new-releases
+    🎧 Get chords: http://192.168.1.10:${PORT}/api/chords/test
   `);
 });
 
