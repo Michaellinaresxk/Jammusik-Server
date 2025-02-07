@@ -100,7 +100,7 @@ class LastFMService {
 
       const trackData = response.data.track;
 
-      // Transformamos los datos para tener información más rica
+      // We transform the data to have richer information.
       return {
         id: trackData.mbid || `${trackName}-${artist}`,
         name: trackData.name,
