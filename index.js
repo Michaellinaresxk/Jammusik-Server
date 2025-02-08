@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const tracksRoutes = require('./routes/tracks.routes');
-const chordRoutes = require('./routes/chord.routes');
+// const chordRoutes = require('./routes/chord.routes');
 require('dotenv').config();
 const app = express();
 // Middleware
@@ -21,7 +21,7 @@ app.get('/api', (req, res) => {
 // API routes
 app.use('/api', tracksRoutes);
 // API chords
-app.use('/api/chords', chordRoutes);
+// app.use('/api/chords', chordRoutes);
 // Error handling middleware - debe ir DESPUÉS de las rutas
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
@@ -41,7 +41,6 @@ app.listen(PORT, () => {
     🎵 Test the server: http://localhost:${PORT}/test
     🔍 Test Spotify endpoints: http://localhost:${PORT}/api/test-endpoints
     🎸 Get new releases: http://localhost:${PORT}/api/browse/new-releases
-      🎧 Get chords : http://localhost:${PORT}/api/chords/test
   `);
 });
 module.exports = app;
