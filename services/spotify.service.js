@@ -1,3 +1,4 @@
+// SpotifyService.js
 const spotifyApi = require('../config/spotify.config');
 
 class SpotifyService {
@@ -13,21 +14,16 @@ class SpotifyService {
         throw new Error('No new releases found');
       }
 
-      // For each album, we obtain additional details
+      // Mejorado: Obtener los detalles completos de la primera canción del álbum
       const releasesWithDetails = await Promise.all(
         response.body.albums.items.map(async (album) => {
           try {
-            // Get the tracks of the album to get the details
             const tracksResponse = await spotifyApi.getAlbumTracks(album.id, { limit: 1 });
             const firstTrack = tracksResponse.body.items[0];
 
-            let duration = 0;
-            let popularity = 0;
-
+            let trackDetails = null;
             if (firstTrack) {
-              const trackDetails = await spotifyApi.getTrack(firstTrack.id);
-              duration = trackDetails.body.duration_ms;
-              popularity = trackDetails.body.popularity;
+              trackDetails = await spotifyApi.getTrack(firstTrack.id);
             }
 
             return {
@@ -37,9 +33,12 @@ class SpotifyService {
               album: album.name,
               image: album.images[0]?.url,
               release_date: album.release_date,
-              external_url: album.external_urls?.spotify,
-              duration_ms: duration,
-              popularity: popularity
+              // Usar el external_url de la canción específica si está disponible
+              external_url: trackDetails?.body?.external_urls?.spotify || album.external_urls?.spotify,
+              track_id: trackDetails?.body?.id,
+              duration_ms: trackDetails?.body?.duration_ms || 0,
+              popularity: trackDetails?.body?.popularity || 0,
+              preview_url: trackDetails?.body?.preview_url
             };
           } catch (error) {
             console.error(`Error fetching details for album ${album.id}:`, error);
@@ -51,15 +50,16 @@ class SpotifyService {
               image: album.images[0]?.url,
               release_date: album.release_date,
               external_url: album.external_urls?.spotify,
+              track_id: null,
               duration_ms: 0,
-              popularity: 0
+              popularity: 0,
+              preview_url: null
             };
           }
         })
       );
 
       return releasesWithDetails;
-
     } catch (error) {
       console.error('Error fetching new releases:', error);
       throw new Error('Failed to fetch new releases');
@@ -68,15 +68,15 @@ class SpotifyService {
 
   async getDetailedTrackInfo(title, artist) {
     try {
-      // Clean and normalize the search terms
-      const cleanTitle = title.trim().toLowerCase();
-      const cleanArtist = artist.trim().toLowerCase();
+      // Mejorada la limpieza y normalización
+      const cleanTitle = this._normalizeText(title);
+      const cleanArtist = this._normalizeText(artist);
 
-      // Build a more specific query
+      // Búsqueda más específica usando operadores de Spotify
       const searchQuery = `track:"${cleanTitle}" artist:"${cleanArtist}"`;
 
       const searchResponse = await spotifyApi.search(searchQuery, ['track'], {
-        limit: 10,
+        limit: 20, // Aumentado para mejor coincidencia
         market: 'US'
       });
 
@@ -84,52 +84,86 @@ class SpotifyService {
         throw new Error('Track not found');
       }
 
-      // We filter to find the most exact match.
+      // Algoritmo mejorado de coincidencia
       const tracks = searchResponse.body.tracks.items;
-      const exactMatch = tracks.find(track =>
-        track.name.toLowerCase().includes(cleanTitle) &&
-        track.artists.some(a => a.name.toLowerCase().includes(cleanArtist))
-      );
+      const scoredTracks = tracks.map(track => ({
+        track,
+        score: this._calculateMatchScore(
+          track,
+          cleanTitle,
+          cleanArtist
+        )
+      }));
 
-      // If there is no exact match, we use the first result
-      const track = exactMatch || tracks[0];
-
-      // Additional match check
-      const matchScore = {
-        titleMatch: track.name.toLowerCase().includes(cleanTitle),
-        artistMatch: track.artists.some(a => a.name.toLowerCase().includes(cleanArtist))
-      };
+      // Ordenar por puntuación y obtener la mejor coincidencia
+      scoredTracks.sort((a, b) => b.score - a.score);
+      const bestMatch = scoredTracks[0].track;
 
       console.log('Match details:', {
         searchedTitle: cleanTitle,
         searchedArtist: cleanArtist,
-        foundTitle: track.name,
-        foundArtist: track.artists[0].name,
-        matchScore
+        foundTitle: bestMatch.name,
+        foundArtist: bestMatch.artists[0].name,
+        matchScore: scoredTracks[0].score
       });
 
       return {
         track_info: {
-          name: track.name,
-          artist: track.artists[0].name,
+          name: bestMatch.name,
+          artist: bestMatch.artists[0].name,
           album: {
-            name: track.album.name,
-            release_date: track.album.release_date,
-            image: track.album.images[0]?.url,
-            type: track.album.album_type
+            name: bestMatch.album.name,
+            release_date: bestMatch.album.release_date,
+            image: bestMatch.album.images[0]?.url,
+            type: bestMatch.album.album_type
           },
-          preview_url: track.preview_url,
-          external_url: track.external_urls.spotify,
-          id: track.id,
-          popularity: track.popularity,
-          explicit: track.explicit
+          preview_url: bestMatch.preview_url,
+          external_url: bestMatch.external_urls.spotify,
+          id: bestMatch.id,
+          popularity: bestMatch.popularity,
+          explicit: bestMatch.explicit
         }
       };
     } catch (error) {
       console.error('Error getting track info:', error);
       throw new Error(`Failed to get track info: ${error.message}`);
     }
+  }
 
+  // Métodos privados de utilidad
+  _normalizeText(text) {
+    return text
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+      .replace(/[^\w\s]/g, ''); // Eliminar caracteres especiales
+  }
+
+  _calculateMatchScore(track, searchTitle, searchArtist) {
+    let score = 0;
+    const trackTitle = this._normalizeText(track.name);
+    const trackArtists = track.artists.map(a => this._normalizeText(a.name));
+
+    // Coincidencia exacta del título
+    if (trackTitle === searchTitle) {
+      score += 100;
+    } else if (trackTitle.includes(searchTitle)) {
+      score += 50;
+    }
+
+    // Coincidencia de artista
+    if (trackArtists.some(artist => artist === searchArtist)) {
+      score += 100;
+    } else if (trackArtists.some(artist => artist.includes(searchArtist))) {
+      score += 50;
+    }
+
+    // Bonus por popularidad (max 20 puntos)
+    score += (track.popularity / 100) * 20;
+
+    return score;
   }
 }
+
 module.exports = new SpotifyService();
