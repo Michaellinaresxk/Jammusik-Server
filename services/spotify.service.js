@@ -1,4 +1,3 @@
-// SpotifyService.js
 const spotifyApi = require('../config/spotify.config');
 
 class SpotifyService {
@@ -14,7 +13,6 @@ class SpotifyService {
         throw new Error('No new releases found');
       }
 
-      // Mejorado: Obtener los detalles completos de la primera canción del álbum
       const releasesWithDetails = await Promise.all(
         response.body.albums.items.map(async (album) => {
           try {
@@ -33,7 +31,7 @@ class SpotifyService {
               album: album.name,
               image: album.images[0]?.url,
               release_date: album.release_date,
-              // Usar el external_url de la canción específica si está disponible
+              // Use the external_url of the specific song if available
               external_url: trackDetails?.body?.external_urls?.spotify || album.external_urls?.spotify,
               track_id: trackDetails?.body?.id,
               duration_ms: trackDetails?.body?.duration_ms || 0,
@@ -68,15 +66,12 @@ class SpotifyService {
 
   async getDetailedTrackInfo(title, artist) {
     try {
-      // Mejorada la limpieza y normalización
       const cleanTitle = this._normalizeText(title);
       const cleanArtist = this._normalizeText(artist);
-
-      // Búsqueda más específica usando operadores de Spotify
       const searchQuery = `track:"${cleanTitle}" artist:"${cleanArtist}"`;
 
       const searchResponse = await spotifyApi.search(searchQuery, ['track'], {
-        limit: 20, // Aumentado para mejor coincidencia
+        limit: 20,
         market: 'US'
       });
 
@@ -84,7 +79,7 @@ class SpotifyService {
         throw new Error('Track not found');
       }
 
-      // Algoritmo mejorado de coincidencia
+      // Improved matching algorithm
       const tracks = searchResponse.body.tracks.items;
       const scoredTracks = tracks.map(track => ({
         track,
@@ -95,7 +90,7 @@ class SpotifyService {
         )
       }));
 
-      // Ordenar por puntuación y obtener la mejor coincidencia
+      // Sort by score and get the best match
       scoredTracks.sort((a, b) => b.score - a.score);
       const bestMatch = scoredTracks[0].track;
 
@@ -130,14 +125,14 @@ class SpotifyService {
     }
   }
 
-  // Métodos privados de utilidad
+  // Private utility methods
   _normalizeText(text) {
     return text
       .trim()
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
-      .replace(/[^\w\s]/g, ''); // Eliminar caracteres especiales
+      .replace(/[\u0300-\u036f]/g, '') // Remove accents
+      .replace(/[^\w\s]/g, ''); // Remove special characters
   }
 
   _calculateMatchScore(track, searchTitle, searchArtist) {
@@ -145,21 +140,21 @@ class SpotifyService {
     const trackTitle = this._normalizeText(track.name);
     const trackArtists = track.artists.map(a => this._normalizeText(a.name));
 
-    // Coincidencia exacta del título
+    // Exact title match
     if (trackTitle === searchTitle) {
       score += 100;
     } else if (trackTitle.includes(searchTitle)) {
       score += 50;
     }
 
-    // Coincidencia de artista
+    // Artist match
     if (trackArtists.some(artist => artist === searchArtist)) {
       score += 100;
     } else if (trackArtists.some(artist => artist.includes(searchArtist))) {
       score += 50;
     }
 
-    // Bonus por popularidad (max 20 puntos)
+    // Popularity bonus (max 20 points)
     score += (track.popularity / 100) * 20;
 
     return score;

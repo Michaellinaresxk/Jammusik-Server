@@ -55,7 +55,7 @@ router.get('/browse/track-info', async (req, res) => {
   }
 });
 
-// LastFM Routes (sin middleware de Spotify)
+// LastFM Routes (without Spotify middleware)
 router.get('/top-tracks', async (req, res) => {
   try {
     const tracks = await LastFMService.getTopTracks();

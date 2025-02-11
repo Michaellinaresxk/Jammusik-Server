@@ -20,7 +20,7 @@ const initializeSpotifyToken = async () => {
   }
 };
 
-// Modifica el middleware para ambiente serverless
+// Modify the middleware for serverless environment
 spotifyApi.ensureToken = async () => {
   if (!spotifyApi.getAccessToken()) {
     await initializeSpotifyToken();
