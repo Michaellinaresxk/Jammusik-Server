@@ -31,9 +31,7 @@ class ChordService {
       if (!response?.content?.length) {
         throw new Error('No chord progression generated');
       }
-      // Procesamos la respuesta
       const chordData = this._processChordResponse(response.content[0]);
-      // Enriquecemos los datos
       const enrichedChordData = await this._enrichChordData(chordData);
       return enrichedChordData;
     } catch (error) {
@@ -43,7 +41,6 @@ class ChordService {
   }
   _processChordResponse(content) {
     try {
-      // Extract JSON from text response
       const jsonStart = content.text.indexOf('{');
       const jsonEnd = content.text.lastIndexOf('}') + 1;
       const jsonString = content.text.slice(jsonStart, jsonEnd);
@@ -76,7 +73,7 @@ class ChordService {
       };
     } catch (error) {
       console.error('Error enriching chord data:', error);
-      return chordData; // Return basic data if enrichment fails
+      return chordData;
     }
   }
   _calculateComplexity(chords) {
@@ -106,7 +103,6 @@ class ChordService {
       'C': { position: 0, alternateKey: 'C' },
       'G': { position: 7, alternateKey: 'C' },
       'D': { position: 2, alternateKey: 'C' },
-      // Añadir más sugerencias según necesites
     };
     return capoSuggestions[key] || { position: 0, alternateKey: key };
   }
