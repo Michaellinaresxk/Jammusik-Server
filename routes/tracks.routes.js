@@ -31,7 +31,8 @@ router.get('/test-endpoints', async (req, res) => {
 // Spotify Routes
 router.get('/browse/new-releases', async (req, res) => {
   try {
-    const releases = await SpotifyService.getNewReleases();
+    const forceRefresh = req.query.refresh === 'true';
+    const releases = await SpotifyService.getNewReleases(forceRefresh);
     res.json(releases);
   } catch (error) {
     res.status(500).json({ error: error.message });

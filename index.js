@@ -41,7 +41,6 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// 🎧 Get chords : http://localhost:${PORT}/api/chords/test
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`
