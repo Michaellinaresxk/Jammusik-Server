@@ -103,6 +103,102 @@ class SpotifyService {
       date.getFullYear() === today.getFullYear()
     );
   }
+
+  async getTrackInfo(title, artist) {
+    try {
+      const cleanTitle = this._normalizeText(title);
+      const cleanArtist = this._normalizeText(artist);
+      const searchQuery = `track:"${cleanTitle}" artist:"${cleanArtist}"`;
+
+      const searchResponse = await this.spotifyApi.search(searchQuery, ['track'], {
+        limit: 20,
+        market: 'US'
+      });
+
+      if (!searchResponse.body.tracks.items.length) {
+        throw new Error('Track not found');
+      }
+
+      // Improved matching algorithm
+      const tracks = searchResponse.body.tracks.items;
+      const scoredTracks = tracks.map(track => ({
+        track,
+        score: this._calculateMatchScore(
+          track,
+          cleanTitle,
+          cleanArtist
+        )
+      }));
+
+      // Sort by score and get the best match
+      scoredTracks.sort((a, b) => b.score - a.score);
+      const bestMatch = scoredTracks[0].track;
+
+      console.log('Match details:', {
+        searchedTitle: cleanTitle,
+        searchedArtist: cleanArtist,
+        foundTitle: bestMatch.name,
+        foundArtist: bestMatch.artists[0].name,
+        matchScore: scoredTracks[0].score
+      });
+
+      return {
+        track_info: {
+          name: bestMatch.name,
+          artist: bestMatch.artists[0].name,
+          album: {
+            name: bestMatch.album.name,
+            release_date: bestMatch.album.release_date,
+            image: bestMatch.album.images[0]?.url,
+            type: bestMatch.album.album_type
+          },
+          preview_url: bestMatch.preview_url,
+          external_url: bestMatch.external_urls.spotify,
+          id: bestMatch.id,
+          popularity: bestMatch.popularity,
+          explicit: bestMatch.explicit
+        }
+      };
+    } catch (error) {
+      console.error('Error getting track info:', error);
+      throw new Error(`Failed to get track info: ${error.message}`);
+    }
+  }
+
+  // Private utility methods
+  _normalizeText(text) {
+    return text
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove accents
+      .replace(/[^\w\s]/g, ''); // Remove special characters
+  }
+
+  _calculateMatchScore(track, searchTitle, searchArtist) {
+    let score = 0;
+    const trackTitle = this._normalizeText(track.name);
+    const trackArtists = track.artists.map(a => this._normalizeText(a.name));
+
+    // Exact title match
+    if (trackTitle === searchTitle) {
+      score += 100;
+    } else if (trackTitle.includes(searchTitle)) {
+      score += 50;
+    }
+
+    // Artist match
+    if (trackArtists.some(artist => artist === searchArtist)) {
+      score += 100;
+    } else if (trackArtists.some(artist => artist.includes(searchArtist))) {
+      score += 50;
+    }
+
+    // Popularity bonus (max 20 points)
+    score += (track.popularity / 100) * 20;
+
+    return score;
+  }
 }
 
-module.exports = new SpotifyService();
+module.exports = new SpotifyService;

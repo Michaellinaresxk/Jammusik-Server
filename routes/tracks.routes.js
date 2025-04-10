@@ -35,6 +35,7 @@ router.get('/browse/new-releases', async (req, res) => {
     const releases = await SpotifyService.getNewReleases(forceRefresh);
     res.json(releases);
   } catch (error) {
+    console.error('Error in /browse/new-releases:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -49,9 +50,18 @@ router.get('/browse/track-info', async (req, res) => {
       });
     }
 
-    const trackInfo = await SpotifyService.getDetailedTrackInfo(title, artist);
+    console.log(`Processing track info request for "${title}" by "${artist}"`);
+
+    const trackInfo = await SpotifyService.getTrackInfo(title, artist);
+
+    if (!trackInfo) {
+      throw new Error('No track information returned from service');
+    }
+
+    console.log('Track info successfully retrieved');
     res.json(trackInfo);
   } catch (error) {
+    console.error('Error in /browse/track-info:', error);
     res.status(500).json({ error: error.message });
   }
 });
